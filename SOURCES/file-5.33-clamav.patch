@@ -1,0 +1,37 @@
+From fb1604080767501fde17eb601382e84f1c1ddca3 Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Mon, 16 Jul 2018 12:30:41 +0000
+Subject: [PATCH] remember to put a space between the version and the number,
+ plus more version parsing (Kamil Dudka)
+
+Upstream-commit: 1a7f58c9f253e3b902bfb7a77afd8375b0b428b7
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ magic/Magdir/fsav | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/magic/Magdir/fsav b/magic/Magdir/fsav
+index 5714798..5d72ab9 100644
+--- a/magic/Magdir/fsav
++++ b/magic/Magdir/fsav
+@@ -48,13 +48,15 @@
+ >11	string		>\0		Clam AntiVirus database %-.23s
+ >>34	string		:
+ >>>35		string		!:	\b, version
+->>>>35		string		x 	\b%-.1s
+->>>>>36		string 		!:
++>>>>35		string		x 	\b %-.1s
++>>>>>36		string		!:
+ >>>>>>36	string		x 	\b%-.1s
+ >>>>>>>37	string		!:
+ >>>>>>>>37	string		x 	\b%-.1s
+ >>>>>>>>>38	string		!:
+ >>>>>>>>>>38	string		x 	\b%-.1s
++>>>>>>>>>>>39	string		!:
++>>>>>>>>>>>>39	string		x 	\b%-.1s
+ >512	string		\037\213	\b, gzipped
+ >769	string		ustar\0		\b, tarred
+ 
+-- 
+2.14.4
+

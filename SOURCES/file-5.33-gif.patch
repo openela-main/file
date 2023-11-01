@@ -1,0 +1,30 @@
+From f0e846528e1c839ab44895a1f13d167a4ad8def3 Mon Sep 17 00:00:00 2001
+From: Marek Cermak <macermak@redhat.com>
+Date: Wed, 20 Dec 2017 16:18:46 +0100
+Subject: [PATCH] Resolves: #1515180 - image/gif classifed as
+ application/octet-stream
+
+https://bugzilla.redhat.com/show_bug.cgi?id=1515180
+
+Signed-off-by: Marek Cermak <macermak@redhat.com>
+---
+ magic/Magdir/images | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/magic/Magdir/images b/magic/Magdir/images
+index 69e8e90f..76f7e7da 100644
+--- a/magic/Magdir/images
++++ b/magic/Magdir/images
+@@ -468,7 +468,9 @@
+ !:mime	image/x-unknown
+ 
+ # GIF
++# Strength set up to beat 0x55AA DOS/MBR signature word lookups (+65)
+ 0	string		GIF8		GIF image data
++!:strength +80
+ !:mime	image/gif
+ !:apple	8BIMGIFf
+ >4	string		7a		\b, version 8%s,
+-- 
+2.13.6
+

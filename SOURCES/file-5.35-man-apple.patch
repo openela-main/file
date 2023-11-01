@@ -1,0 +1,56 @@
+From 5bccda402a33b4b6fee13cbc910580a85f1ab73a Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Mon, 18 Feb 2019 18:59:25 +0000
+Subject: [PATCH 1/2] Mention that the apple filetype/creator is only available for
+ entries that have it (Kamil Dudka)
+
+Upstream-commit: 642f269ef99930b44daa2236908da7d05a68eb08
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ doc/file.man | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/doc/file.man b/doc/file.man
+index 0968321..98061ba 100644
+--- a/doc/file.man
++++ b/doc/file.man
+@@ -171,6 +171,9 @@ Causes the file command to output the file type and creator code as
+ used by older MacOS versions.
+ The code consists of eight letters,
+ the first describing the file type, the latter the creator.
++the first describing the file type, the latter the creator.
++This option works properly only for file formats that have the
++apple-style output defined.
+ .It Fl b , Fl Fl brief
+ Do not prepend filenames to output lines (brief mode).
+ .It Fl C , Fl Fl compile
+-- 
+2.20.1
+
+
+From f7f3e751c0e606592b4d377a479b40f6964705ab Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Sun, 3 Mar 2019 02:32:40 +0000
+Subject: [PATCH 2/2] remove duplicate line (chefe)
+
+Upstream-commit: cde5f5962ebfd057fc2e330da3b36470e6ee3724
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ doc/file.man | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/doc/file.man b/doc/file.man
+index 98061ba..05da3a7 100644
+--- a/doc/file.man
++++ b/doc/file.man
+@@ -171,7 +171,6 @@ Causes the file command to output the file type and creator code as
+ used by older MacOS versions.
+ The code consists of eight letters,
+ the first describing the file type, the latter the creator.
+-the first describing the file type, the latter the creator.
+ This option works properly only for file formats that have the
+ apple-style output defined.
+ .It Fl b , Fl Fl brief
+-- 
+2.21.1
+

@@ -1,0 +1,77 @@
+diff --git a/src/Makefile.am b/src/Makefile.am
+index a9b245d..c7f184d 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -17,10 +17,10 @@ MINGWLIBS = -lgnurx -lshlwapi
+ else
+ MINGWLIBS = 
+ endif
+-libmagic_la_LIBADD = $(LTLIBOBJS) $(MINGWLIBS)
++libmagic_la_LIBADD = -lm $(LTLIBOBJS) $(MINGWLIBS)
+ 
+ file_SOURCES = file.c seccomp.c
+-file_LDADD = libmagic.la
++file_LDADD = libmagic.la -lm
+ CLEANFILES = magic.h
+ EXTRA_DIST = magic.h.in
+ HDR= $(top_srcdir)/src/magic.h.in
+diff --git a/src/softmagic.c b/src/softmagic.c
+index 3e76517..57b4677 100644
+--- a/src/softmagic.c
++++ b/src/softmagic.c
+@@ -37,6 +37,7 @@ FILE_RCSID("@(#)$File: softmagic.c,v 1.259 2018/03/11 01:23:52 christos Exp $")
+ 
+ #include "magic.h"
+ #include <assert.h>
++#include <math.h>
+ #include <string.h>
+ #include <ctype.h>
+ #include <stdlib.h>
+@@ -1893,19 +1894,19 @@ magiccheck(struct magic_set *ms, struct magic *m)
+ 			break;
+ 
+ 		case '!':
+-			matched = fv != fl;
++			matched = isunordered(fl, fv) ? 1 : fv != fl;
+ 			break;
+ 
+ 		case '=':
+-			matched = fv == fl;
++			matched = isunordered(fl, fv) ? 0 : fv == fl;
+ 			break;
+ 
+ 		case '>':
+-			matched = fv > fl;
++			matched = isgreater(fv, fl);
+ 			break;
+ 
+ 		case '<':
+-			matched = fv < fl;
++			matched = isless(fv, fl);
+ 			break;
+ 
+ 		default:
+@@ -1926,19 +1927,19 @@ magiccheck(struct magic_set *ms, struct magic *m)
+ 			break;
+ 
+ 		case '!':
+-			matched = dv != dl;
++			matched = isunordered(dv, dl) ? 1 : dv != dl;
+ 			break;
+ 
+ 		case '=':
+-			matched = dv == dl;
++			matched = isunordered(dv, dl) ? 0 : dv == dl;
+ 			break;
+ 
+ 		case '>':
+-			matched = dv > dl;
++			matched = isgreater(dv, dl);
+ 			break;
+ 
+ 		case '<':
+-			matched = dv < dl;
++			matched = isless(dv, dl);
+ 			break;
+ 
+ 		default:
