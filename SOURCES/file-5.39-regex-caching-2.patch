@@ -1,0 +1,226 @@
+diff --git a/src/apprentice.c b/src/apprentice.c
+index 21eac1e..781c5e1 100644
+--- a/src/apprentice.c
++++ b/src/apprentice.c
+@@ -513,6 +513,9 @@ file_ms_free(struct magic_set *ms)
+ 	free(ms->o.pbuf);
+ 	free(ms->o.buf);
+ 	free(ms->c.li);
++#ifdef USE_C_LOCALE
++	freelocale(ms->c_lc_ctype);
++#endif
+ 	free(ms);
+ }
+ 
+@@ -551,6 +554,10 @@ file_ms_alloc(int flags)
+ 	ms->elf_notes_max = FILE_ELF_NOTES_MAX;
+ 	ms->regex_max = FILE_REGEX_MAX;
+ 	ms->bytes_max = FILE_BYTES_MAX;
++#ifdef USE_C_LOCALE
++       ms->c_lc_ctype = newlocale(LC_CTYPE_MASK, "C", 0);
++       assert(ms->c_lc_ctype != NULL);
++#endif
+ 	return ms;
+ free:
+ 	free(ms);
+@@ -624,6 +631,7 @@ mlist_free_one(struct mlist *ml)
+ 		if (ml->magic_rxcomp[i]) {
+ 			file_regfree(ml->magic_rxcomp[i]);
+ 			free(ml->magic_rxcomp[i]);
++			ml->magic_rxcomp[i] = NULL;
+ 		}
+ 	}
+ 	free(ml->magic_rxcomp);
+@@ -2714,7 +2722,8 @@ getvalue(struct magic_set *ms, struct magic *m, const char **p, int action)
+ 		}
+ 		if (m->type == FILE_REGEX) {
+ 			file_regex_t rx;
+-			int rc = file_regcomp(&rx, m->value.s, REG_EXTENDED);
++			int rc = file_regcomp(ms, &rx, m->value.s,
++			    REG_EXTENDED);
+ 			if (rc) {
+ 				if (ms->flags & MAGIC_CHECK)
+ 					file_regerror(&rx, rc, ms);
+diff --git a/src/file.h b/src/file.h
+index c0b5a7c..f049446 100644
+--- a/src/file.h
++++ b/src/file.h
+@@ -173,13 +173,6 @@
+ 
+ typedef struct {
+ 	const char *pat;
+-#if defined(HAVE_NEWLOCALE) && defined(HAVE_USELOCALE) && defined(HAVE_FREELOCALE)
+-#define USE_C_LOCALE
+-	locale_t old_lc_ctype;
+-	locale_t c_lc_ctype;
+-#else
+-	char *old_lc_ctype;
+-#endif
+ 	int rc;
+ 	regex_t rx;
+ } file_regex_t;
+@@ -487,6 +480,10 @@ struct magic_set {
+ #define	FILE_INDIR_MAX			50
+ #define	FILE_NAME_MAX			50
+ #define	FILE_REGEX_MAX			8192
++#if defined(HAVE_NEWLOCALE) && defined(HAVE_USELOCALE) && defined(HAVE_FREELOCALE)
++#define USE_C_LOCALE
++       locale_t c_lc_ctype;
++#endif
+ };
+ 
+ /* Type for Unicode characters */
+@@ -574,9 +571,10 @@ protected int buffer_fill(const struct buffer *);
+ 
+ 
+ 
+-protected int file_regcomp(file_regex_t *, const char *, int);
+-protected int file_regexec(file_regex_t *, const char *, size_t, regmatch_t *,
++protected int file_regcomp(struct magic_set *, file_regex_t *, const char *,
+     int);
++protected int file_regexec(struct magic_set *, file_regex_t *, const char *,
++    size_t, regmatch_t *, int);
+ protected void file_regfree(file_regex_t *);
+ protected void file_regerror(file_regex_t *, int, struct magic_set *);
+ 
+diff --git a/src/funcs.c b/src/funcs.c
+index 6320cf2..1391a44 100644
+--- a/src/funcs.c
++++ b/src/funcs.c
+@@ -613,13 +613,13 @@ file_replace(struct magic_set *ms, const char *pat, const char *rep)
+ 	file_regex_t rx;
+ 	int rc, rv = -1;
+ 
+-	rc = file_regcomp(&rx, pat, REG_EXTENDED);
++	rc = file_regcomp(ms, &rx, pat, REG_EXTENDED);
+ 	if (rc) {
+ 		file_regerror(&rx, rc, ms);
+ 	} else {
+ 		regmatch_t rm;
+ 		int nm = 0;
+-		while (file_regexec(&rx, ms->o.buf, 1, &rm, 0) == 0) {
++		while (file_regexec(ms, &rx, ms->o.buf, 1, &rm, 0) == 0) {
+ 			ms->o.buf[rm.rm_so] = '\0';
+ 			if (file_printf(ms, "%s%s", rep,
+ 			    rm.rm_eo != 0 ? ms->o.buf + rm.rm_eo : "") == -1)
+@@ -634,34 +634,52 @@ out:
+ }
+ 
+ protected int
+-file_regcomp(file_regex_t *rx, const char *pat, int flags)
++file_regcomp(struct magic_set *ms, file_regex_t *rx, const char *pat, int flags)
+ {
+ #ifdef USE_C_LOCALE
+-	rx->c_lc_ctype = newlocale(LC_CTYPE_MASK, "C", 0);
+-	assert(rx->c_lc_ctype != NULL);
+-	rx->old_lc_ctype = uselocale(rx->c_lc_ctype);
+-	assert(rx->old_lc_ctype != NULL);
++	locale_t old = uselocale(ms->c_lc_ctype);
++	assert(old != NULL);
+ #else
+-	rx->old_lc_ctype = setlocale(LC_CTYPE, NULL);
+-	assert(rx->old_lc_ctype != NULL);
+-	rx->old_lc_ctype = strdup(rx->old_lc_ctype);
+-	assert(rx->old_lc_ctype != NULL);
++	char old[1024];
++	strlcpy(old, setlocale(LC_CTYPE, NULL), sizeof(old));
+ 	(void)setlocale(LC_CTYPE, "C");
+ #endif
+ 	rx->pat = pat;
+ 
+-	return rx->rc = regcomp(&rx->rx, pat, flags);
++	rx->rc = regcomp(&rx->rx, pat, flags);
++
++#ifdef USE_C_LOCALE
++	uselocale(old);
++#else
++	(void)setlocale(LC_CTYPE, old);
++#endif
++	return rx->rc;
+ }
+ 
+ protected int
+-file_regexec(file_regex_t *rx, const char *str, size_t nmatch,
+-    regmatch_t* pmatch, int eflags)
++file_regexec(struct magic_set *ms, file_regex_t *rx, const char *str,
++    size_t nmatch, regmatch_t* pmatch, int eflags)
+ {
++#ifdef USE_C_LOCALE
++	locale_t old = uselocale(ms->c_lc_ctype);
++	assert(old != NULL);
++#else
++	char old[1024];
++	strlcpy(old, setlocale(LC_CTYPE, NULL), sizeof(old));
++	(void)setlocale(LC_CTYPE, "C");
++#endif
++	int rc;
+ 	assert(rx->rc == 0);
+ 	/* XXX: force initialization because glibc does not always do this */
+ 	if (nmatch != 0)
+ 		memset(pmatch, 0, nmatch * sizeof(*pmatch));
+-	return regexec(&rx->rx, str, nmatch, pmatch, eflags);
++	rc = regexec(&rx->rx, str, nmatch, pmatch, eflags);
++#ifdef USE_C_LOCALE
++	uselocale(old);
++#else
++	(void)setlocale(LC_CTYPE, old);
++#endif
++	return rc;
+ }
+ 
+ protected void
+@@ -669,13 +687,6 @@ file_regfree(file_regex_t *rx)
+ {
+ 	if (rx->rc == 0)
+ 		regfree(&rx->rx);
+-#ifdef USE_C_LOCALE
+-	(void)uselocale(rx->old_lc_ctype);
+-	freelocale(rx->c_lc_ctype);
+-#else
+-	(void)setlocale(LC_CTYPE, rx->old_lc_ctype);
+-	free(rx->old_lc_ctype);
+-#endif
+ }
+ 
+ protected void
+diff --git a/src/softmagic.c b/src/softmagic.c
+index 43338fc..b4052a6 100644
+--- a/src/softmagic.c
++++ b/src/softmagic.c
+@@ -478,11 +478,11 @@ check_fmt(struct magic_set *ms, const char *fmt)
+ 	if (strchr(fmt, '%') == NULL)
+ 		return 0;
+ 
+-	rc = file_regcomp(&rx, "%[-0-9\\.]*s", REG_EXTENDED|REG_NOSUB);
++	rc = file_regcomp(ms, &rx, "%[-0-9\\.]*s", REG_EXTENDED|REG_NOSUB);
+ 	if (rc) {
+ 		file_regerror(&rx, rc, ms);
+ 	} else {
+-		rc = file_regexec(&rx, fmt, 0, 0, 0);
++		rc = file_regexec(ms, &rx, fmt, 0, 0, 0);
+ 		rv = !rc;
+ 	}
+ 	file_regfree(&rx);
+@@ -2003,11 +2003,12 @@ alloc_regex(struct magic_set *ms, struct magic *m)
+ 		return NULL;
+ 	}
+ 
+-	rc = file_regcomp(rx, m->value.s, REG_EXTENDED | REG_NEWLINE |
++	rc = file_regcomp(ms, rx, m->value.s, REG_EXTENDED | REG_NEWLINE |
+ 	    ((m->str_flags & STRING_IGNORE_CASE) ? REG_ICASE : 0));
+ 	if (rc == 0)
+ 		return rx;
+ 
++fprintf(stderr, "regcomp %s %d\n", m->value.s, rc);
+ 	file_regerror(rx, rc, ms);
+ 	file_regfree(rx);
+ 	free(rx);
+@@ -2225,7 +2226,7 @@ magiccheck(struct magic_set *ms, struct magic *m, file_regex_t **m_cache)
+ 		    search = CCAST(char *, "");
+ 		    copy = NULL;
+ 		}
+-		rc = file_regexec(rx, RCAST(const char *, search),
++		rc = file_regexec(ms, rx, RCAST(const char *, search),
+ 		    1, &pmatch, 0);
+ 		free(copy);
+ 		switch (rc) {

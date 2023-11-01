@@ -1,0 +1,28 @@
+From d1a00ae92b2cf09298615cf3aba474d8fec7380f Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Mon, 18 Apr 2022 21:46:43 +0000
+Subject: [PATCH] From Dirk Mueller:
+
+when name/use was used, the regex caching table was incorrectly
+initialized, which led to false or missing matches.
+---
+ src/apprentice.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/apprentice.c b/src/apprentice.c
+index 804c0e33e..992102b4e 100644
+--- a/src/apprentice.c
++++ b/src/apprentice.c
+@@ -3678,11 +3678,11 @@ file_magicfind(struct magic_set *ms, const char *name, struct mlist *v)
+ 				continue;
+ 			if (strcmp(ma[i].value.s, name) == 0) {
+ 				v->magic = &ma[i];
++				v->magic_rxcomp = &(ml->magic_rxcomp[i]);
+ 				for (j = i + 1; j < ml->nmagic; j++)
+ 				    if (ma[j].cont_level == 0)
+ 					    break;
+ 				v->nmagic = j - i;
+-				v->magic_rxcomp = ml->magic_rxcomp;
+ 				return 0;
+ 			}
+ 		}
