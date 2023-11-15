@@ -1,0 +1,68 @@
+diff -urp file-5.33.orig/src/softmagic.c file-5.33/src/softmagic.c
+--- file-5.33.orig/src/softmagic.c	2020-12-14 12:26:50.286849841 -0500
++++ file-5.33/src/softmagic.c	2020-12-14 12:35:52.679166211 -0500
+@@ -1748,7 +1748,8 @@ mget(struct magic_set *ms, struct magic
+ }
+ 
+ private uint64_t
+-file_strncmp(const char *s1, const char *s2, size_t len, uint32_t flags)
++file_strncmp(const char *s1, const char *s2, size_t len, size_t maxlen,
++    uint32_t flags)
+ {
+ 	/*
+ 	 * Convert the source args to unsigned here so that (1) the
+@@ -1760,7 +1761,7 @@ file_strncmp(const char *s1, const char
+ 	const unsigned char *b = (const unsigned char *)s2;
+ 	uint32_t ws = flags & (STRING_COMPACT_WHITESPACE |
+ 		STRING_COMPACT_OPTIONAL_WHITESPACE);
+-	const unsigned char *eb = b + (ws ? strlen(s2) : len);
++	const unsigned char *eb = b + (ws ? maxlen : len);
+ 	uint64_t v;
+ 
+ 	/*
+@@ -1818,7 +1819,8 @@ file_strncmp(const char *s1, const char
+ }
+ 
+ private uint64_t
+-file_strncmp16(const char *a, const char *b, size_t len, uint32_t flags)
++file_strncmp16(const char *a, const char *b, size_t len, size_t maxlen,
++    uint32_t flags)
+ {
+ 	/*
+ 	 * XXX - The 16-bit string compare probably needs to be done
+@@ -1826,7 +1828,7 @@ file_strncmp16(const char *a, const char
+ 	 * At the moment, I am unsure.
+ 	 */
+ 	flags = 0;
+-	return file_strncmp(a, b, len, flags);
++	return file_strncmp(a, b, len, maxlen, flags);
+ }
+ 
+ private int
+@@ -1954,13 +1956,15 @@ magiccheck(struct magic_set *ms, struct
+ 	case FILE_STRING:
+ 	case FILE_PSTRING:
+ 		l = 0;
+-		v = file_strncmp(m->value.s, p->s, (size_t)m->vallen, m->str_flags);
++		v = file_strncmp(m->value.s, p->s, (size_t)m->vallen,
++		       sizeof(p->s), m->str_flags);
+ 		break;
+ 
+ 	case FILE_BESTRING16:
+ 	case FILE_LESTRING16:
+ 		l = 0;
+-		v = file_strncmp16(m->value.s, p->s, (size_t)m->vallen, m->str_flags);
++		v = file_strncmp16(m->value.s, p->s, (size_t)m->vallen,
++		       sizeof(p->s), m->str_flags);
+ 		break;
+ 
+ 	case FILE_SEARCH: { /* search ms->search.s for the string m->value.s */
+@@ -1979,7 +1983,7 @@ magiccheck(struct magic_set *ms, struct
+ 				return 0;
+ 
+ 			v = file_strncmp(m->value.s, ms->search.s + idx, slen,
+-			    m->str_flags);
++			    ms->search.s_len - idx, m->str_flags);
+ 			if (v == 0) {	/* found match */
+ 				ms->search.offset += idx;
+ 				ms->search.rm_len = ms->search.s_len - idx;

@@ -1,0 +1,62 @@
+From 7a4b49897c3bc63bdf680f8cb1d7a04ac932a4ff Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Mon, 21 May 2018 16:32:34 +0000
+Subject: [PATCH 1/2] Add missing commas.
+
+Upstream-commit: defcf7e39943780dd19ca002c478e52ec9ee5cbc
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ magic/Magdir/elf | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/magic/Magdir/elf b/magic/Magdir/elf
+index 7c6ac8f..d5b2d02 100644
+--- a/magic/Magdir/elf
++++ b/magic/Magdir/elf
+@@ -50,7 +50,7 @@
+ !:mime	application/x-executable
+ >16	leshort		3		shared object,
+ !:mime	application/x-sharedlib
+->16	leshort		4		core file
++>16	leshort		4		core file,
+ !:mime	application/x-coredump
+ # Core file detection is not reliable.
+ #>>>(0x38+0xcc) string	>\0		of '%s'
+-- 
+2.20.1
+
+
+From 1c7aa7b88ef9f53e19a64961867427b0c1f04857 Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Tue, 22 Jan 2019 16:28:42 +0000
+Subject: [PATCH 2/2] Add Linux PowerPC core offsets for Linux (which are off-by-4
+ of the regular offsets), after the regular Linux offsets so that there is no
+ confusion. The linux offsets are tried first since they are before, so on PPC
+ they should contain binary data and not match. Addition requested by: Ondrej
+ Dubaj/Kamil Dudka
+
+Upstream-commit: 6367a7c9b476767a692f76e78e3b355dc9386e48
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ src/readelf.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/readelf.c b/src/readelf.c
+index d96a538..c101483 100644
+--- a/src/readelf.c
++++ b/src/readelf.c
+@@ -246,7 +246,10 @@ static const size_t	prpsoffsets32[] = {
+ 	84,		/* SunOS 5.x (short name) */
+ 
+ 	44,		/* Linux (command line) */
+-	28,		/* Linux 2.0.36 (short name) */
++	28,		/* Linux (short name) */
++
++	48,		/* Linux PowerPC (command line) */
++	32,		/* Linux PowerPC (short name) */
+ 
+ 	8,		/* FreeBSD */
+ };
+-- 
+2.20.1
+

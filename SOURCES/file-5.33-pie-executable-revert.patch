@@ -1,0 +1,34 @@
+From 719116b196fd873f5a463dfdb0fd6258cee51591 Mon Sep 17 00:00:00 2001
+From: Kamil Dudka <kdudka@redhat.com>
+Date: Tue, 22 May 2018 18:18:06 +0200
+Subject: [PATCH] Revert "add a conditional in description"
+
+Upstream-commit: 6876ebadcdf27224b3ffa9dfa4343127aa97c9b2
+
+... and partially revert upstream commit
+7dbecfe406a6bb2de1fe7ec2fe413dcd8871ac74
+
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ magic/Magdir/elf | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/magic/Magdir/elf b/magic/Magdir/elf
+index 7fd5de1..dba5a73 100644
+--- a/magic/Magdir/elf
++++ b/magic/Magdir/elf
+@@ -48,9 +48,8 @@
+ !:mime	application/x-object
+ >16	leshort		2		executable,
+ !:mime	application/x-executable
+->16	leshort		3		${x?pie executable:shared object}
+-
+-!:mime	application/x-${x?pie-executable:sharedlib}
++>16	leshort		3		shared object,
++!:mime	application/x-sharedlib
+ >16	leshort		4		core file
+ !:mime	application/x-coredump
+ # Core file detection is not reliable.
+-- 
+2.14.3
+

@@ -1,0 +1,35 @@
+diff -urp file-5.33.orig/magic/Magdir/commands file-5.33/magic/Magdir/commands
+--- file-5.33.orig/magic/Magdir/commands	2017-08-14 03:40:38.000000000 -0400
++++ file-5.33/magic/Magdir/commands	2020-12-17 13:30:07.063162185 -0500
+@@ -8,6 +8,8 @@
+ !:mime	text/x-shellscript
+ 0	string/wb	#!\ /bin/sh		POSIX shell script executable (binary data)
+ !:mime	text/x-shellscript
++0       string/w        #!\ /usr/bin/sh         Shell script text executable
++!:mime  text/x-shellscript
+ 
+ 0	string/wt	#!\ /bin/csh		C shell script text executable
+ !:mime	text/x-shellscript
+diff -urp file-5.33.orig/magic/Magdir/javascript file-5.33/magic/Magdir/javascript
+--- file-5.33.orig/magic/Magdir/javascript	2012-06-16 09:30:36.000000000 -0400
++++ file-5.33/magic/Magdir/javascript	2020-12-17 13:36:56.276843745 -0500
+@@ -15,3 +15,5 @@
+ !:mime application/javascript
+ 0	search/1	#!/usr/bin/env\ nodejs	Node.js script text executable
+ !:mime application/javascript
++0       string/wt       #!\ /usr/bin/gjs        Gnome Javascript text executable
++!:mime  text/javascript
+diff -urp file-5.33.orig/magic/Magdir/tcl file-5.33/magic/Magdir/tcl
+--- file-5.33.orig/magic/Magdir/tcl	2014-01-08 17:29:21.000000000 -0500
++++ file-5.33/magic/Magdir/tcl	2020-12-17 13:36:20.855391803 -0500
+@@ -12,6 +12,10 @@
+ !:mime	text/x-tcl
+ 0	search/1	#!\ /usr/bin/env\ tcl	Tcl script text executable
+ !:mime	text/x-tcl
++0       string/wt       #!\ /usr/bin/jimsh      Jim TCL text executable
++!:mime  text/x-tcl
++0       search/1/wt      #!\ /usr/bin/tclsh     Tcl/Tk script text executable
++!:mime  text/x-tcl
+ 0	search/1/w	#!\ /usr/bin/wish	Tcl/Tk script text executable
+ !:mime	text/x-tcl
+ 0	search/1/w	#!\ /usr/local/bin/wish	Tcl/Tk script text executable

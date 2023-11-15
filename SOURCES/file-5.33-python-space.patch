@@ -1,0 +1,23 @@
+diff -urp file-5.33.orig/magic/Magdir/python file-5.33/magic/Magdir/python
+--- file-5.33.orig/magic/Magdir/python	2017-08-14 03:40:38.000000000 -0400
++++ file-5.33/magic/Magdir/python	2020-12-14 12:24:42.084905613 -0500
+@@ -30,16 +30,16 @@
+ 0	belong		0x3e0d0d0a	python 3.7 byte-compiled
+ 
+ 
+-0	search/1/w	#!\ /usr/bin/python	Python script text executable
++0	search/1/w	#!\040/usr/bin/python	Python script text executable
+ !:strength + 15
+ !:mime text/x-python
+-0	search/1/w	#!\ /usr/local/bin/python	Python script text executable
++0	search/1/w	#!\040/usr/local/bin/python	Python script text executable
+ !:strength + 15
+ !:mime text/x-python
+ 0	search/1	#!/usr/bin/env\ python	Python script text executable
+ !:strength + 15
+ !:mime text/x-python
+-0	search/10	#!\ /usr/bin/env\ python	Python script text executable
++0	search/10	#!\040/usr/bin/env\ python	Python script text executable
+ !:strength + 15
+ !:mime text/x-python
+ 

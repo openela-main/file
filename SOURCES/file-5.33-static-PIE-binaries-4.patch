@@ -1,0 +1,125 @@
+From 948d0e24f33c3b411b5ec1e320acec889e6781b8 Mon Sep 17 00:00:00 2001
+From: Vincent Mihalkovic <vmihalko@redhat.com>
+Date: Mon, 6 Feb 2023 15:04:33 +0100
+Subject: [PATCH] Improve detection of static-pie binaries, and don't call them
+ "dynamically linked", but call them "static-pie" linked.
+
+363d7fcf703ad3ebf37b45693b2c9e43eb8b4176
+---
+ src/readelf.c | 35 +++++++++++++++++++++++++----------
+ 1 file changed, 25 insertions(+), 10 deletions(-)
+
+diff --git a/src/readelf.c b/src/readelf.c
+index 9c75c0a..0011659 100644
+--- a/src/readelf.c
++++ b/src/readelf.c
+@@ -1040,7 +1040,7 @@ do_auxv_note(struct magic_set *ms, unsigned char *nbuf, uint32_t type,
+ 
+ private size_t
+ dodynamic(struct magic_set *ms, void *vbuf, size_t offset, size_t size,
+-    int clazz, int swap)
++    int clazz, int swap, int *pie, size_t *need)
+ {
+ 	Elf32_Dyn dh32;
+ 	Elf64_Dyn dh64;
+@@ -1058,11 +1058,15 @@ dodynamic(struct magic_set *ms, void *vbuf, size_t offset, size_t size,
+ 
+ 	switch (xdh_tag) {
+ 	case DT_FLAGS_1:
++                *pie = 1;
+ 		if (xdh_val & DF_1_PIE)
+ 			ms->mode |= 0111;
+ 		else
+ 			ms->mode &= ~0111;
+ 		break;
++        case DT_NEEDED:
++                (*need)++;
++                break;
+ 	default:
+ 		break;
+ 	}
+@@ -1529,9 +1533,10 @@ doshn(struct magic_set *ms, int clazz, int swap, int fd, off_t off, int num,
+ }
+ 
+ /*
+- * Look through the program headers of an executable image, searching
+- * for a PT_INTERP section; if one is found, it's dynamically linked,
+- * otherwise it's statically linked.
++ * Look through the program headers of an executable image, to determine
++ * if it is statically or dynamically linked. If it has a dynamic section,
++ * it is pie, and does not have an interpreter or needed libraries, we
++ * call it static pie.
+  */
+ private int
+ dophn_exec(struct magic_set *ms, int clazz, int swap, int fd, off_t off,
+@@ -1540,12 +1545,13 @@ dophn_exec(struct magic_set *ms, int clazz, int swap, int fd, off_t off,
+ {
+ 	Elf32_Phdr ph32;
+ 	Elf64_Phdr ph64;
+-	const char *linking_style = "statically";
++	const char *linking_style;
+ 	unsigned char nbuf[BUFSIZ];
+ 	char ibuf[BUFSIZ];
+ 	char interp[BUFSIZ];
+ 	ssize_t bufsize;
+-	size_t offset, align, len;
++	size_t offset, align, len, need = 0;
++        int pie = 0, dynamic = 0;
+ 	
+ 	if (size != xph_sizeof) {
+ 		if (file_printf(ms, ", corrupted program header size") == -1)
+@@ -1569,7 +1575,6 @@ dophn_exec(struct magic_set *ms, int clazz, int swap, int fd, off_t off,
+ 		/* Things we can determine before we seek */
+ 		switch (xph_type) {
+ 		case PT_DYNAMIC:
+-			linking_style = "dynamically";
+ 			doread = 1;
+ 			break;
+ 		case PT_NOTE:
+@@ -1610,6 +1615,7 @@ dophn_exec(struct magic_set *ms, int clazz, int swap, int fd, off_t off,
+ 		/* Things we can determine when we seek */
+ 		switch (xph_type) {
+ 		case PT_DYNAMIC:
++			dynamic = 1;
+ 			offset = 0;
+                         // Let DF_1 determine if we are PIE or not.
+                         ms->mode &= ~0111;
+@@ -1617,7 +1623,8 @@ dophn_exec(struct magic_set *ms, int clazz, int swap, int fd, off_t off,
+ 				if (offset >= (size_t)bufsize)
+ 					break;
+ 				offset = dodynamic(ms, nbuf, offset,
+-				    CAST(size_t, bufsize), clazz, swap);
++				    CAST(size_t, bufsize), clazz, swap,
++				    &pie, &need);
+ 				if (offset == 0)
+ 					break;
+ 			}
+@@ -1626,6 +1633,7 @@ dophn_exec(struct magic_set *ms, int clazz, int swap, int fd, off_t off,
+ 			break;
+ 
+ 		case PT_INTERP:
++                        need++;
+                         if (ms->flags & MAGIC_MIME)
+                                 continue;
+ 			if (bufsize && nbuf[0]) {
+@@ -1660,8 +1668,15 @@ dophn_exec(struct magic_set *ms, int clazz, int swap, int fd, off_t off,
+ 	}
+ 	if (ms->flags & MAGIC_MIME)
+ 		return 0;
+-	if (file_printf(ms, ", %s linked", linking_style)
+-	    == -1)
++	if (dynamic) {
++		if (pie && need == 0)
++			linking_style = "static-pie";
++		else
++			linking_style = "dynamically";
++	} else {
++		linking_style = "statically";
++	}
++	if (file_printf(ms, ", %s linked", linking_style) == -1)
+ 		return -1;
+ 	if (interp[0])
+ 		if (file_printf(ms, ", interpreter %s",
+-- 
+2.39.1
+
