@@ -1,0 +1,13 @@
+diff --git a/magic/Magdir/filesystems b/magic/Magdir/filesystems
+index eb41868f..44805a35 100644
+--- a/magic/Magdir/filesystems
++++ b/magic/Magdir/filesystems
+@@ -1973,7 +1973,7 @@
+ # to display CD-ROM (70=81-11) after MBR (113=40+72+1), partition-table (71=50+21) and before Apple Driver Map (51)
+ #!:strength -11
+ # to display CD-ROM (114=81+33) before MBR (113=40+72+1), partition-table (71=50+21) and Apple Driver Map (51)
+-!:strength +34
++!:strength +35
+ >0	use	cdrom
+ 
+ # URL: https://en.wikipedia.org/wiki/NRG_(file_format)

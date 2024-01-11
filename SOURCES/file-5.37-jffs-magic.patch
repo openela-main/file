@@ -1,0 +1,40 @@
+From 432267e707aca36bec55704fd404fa572e2c4b45 Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Fri, 15 Nov 2019 23:49:38 +0000
+Subject: [PATCH] fix JFFS2 (the old magic was just hex encoded 0x1984 which is
+ wrong (Kamil Dudka)
+
+Upstream-commit: 5ad78c726bb03e0fbdb6d237ef2b13e51968ffea
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ magic/Magdir/filesystems | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+diff --git a/magic/Magdir/filesystems b/magic/Magdir/filesystems
+index 1920e56..da5c580 100644
+--- a/magic/Magdir/filesystems
++++ b/magic/Magdir/filesystems
+@@ -2057,10 +2057,6 @@
+ >0x10040	lelong	2		yura hash
+ >0x10040	lelong	3		r5 hash
+ 
+-# JFFS - russell@coker.com.au
+-0	lelong	0x34383931	Linux Journalled Flash File system, little endian
+-0	belong	0x34383931	Linux Journalled Flash File system, big endian
+-
+ # EST flat binary format (which isn't, but anyway)
+ # From: Mark Brown <broonie@sirena.org.uk>
+ 0	string	ESTFBINR	EST flat binary
+@@ -2144,7 +2140,9 @@
+ 
+ # JFFS2 file system
+ 0	leshort	0x1984		Linux old jffs2 filesystem data little endian
++0	beshort	0x1984		Linux old jffs2 filesystem data big endian
+ 0	leshort	0x1985		Linux jffs2 filesystem data little endian
++0	beshort	0x1985		Linux jffs2 filesystem data big endian
+ 
+ # Squashfs
+ 0	string	sqsh	Squashfs filesystem, big endian,
+-- 
+2.20.1
+

@@ -1,0 +1,31 @@
+From 7bd1d499157caa391082f594d197f49f5327bd56 Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Wed, 1 Aug 2018 09:59:45 +0000
+Subject: [PATCH] fix leak on error, found by coverity.
+
+Upstream-commit: e0805be4909e47dac47bab9d0caf3725da43e645
+Signed-off-by: Kamil Dudka <kdudka@redhat.com>
+---
+ src/compress.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/src/compress.c b/src/compress.c
+index 184011b..cb11303 100644
+--- a/src/compress.c
++++ b/src/compress.c
+@@ -249,8 +249,11 @@ file_zmagic(struct magic_set *ms, const struct buffer *b, const char *name)
+ 			 * XXX: If file_buffer fails here, we overwrite
+ 			 * the compressed text. FIXME.
+ 			 */
+-			if (file_buffer(ms, -1, NULL, buf, nbytes) == -1)
++			if (file_buffer(ms, -1, NULL, buf, nbytes) == -1) {
++				if (file_pop_buffer(ms, pb) != NULL)
++					abort();
+ 				goto error;
++			}
+ 			if ((rbuf = file_pop_buffer(ms, pb)) != NULL) {
+ 				if (file_printf(ms, "%s", rbuf) == -1) {
+ 					free(rbuf);
+-- 
+2.17.2
+

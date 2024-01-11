@@ -1,0 +1,236 @@
+From 3951ed6ab1ba4b7d6d4d2dd5700858c470627c46 Mon Sep 17 00:00:00 2001
+From: Vincent Mihalkovic <vmihalko@redhat.com>
+Date: Thu, 9 Feb 2023 16:46:43 +0100
+Subject: [PATCH] store copy of the mode info in the magic_set
+
+---
+ src/file.h      |  1 +
+ src/funcs.c     | 53 +++++++++++++++++++++++++++++++------------------
+ src/softmagic.c | 27 +++++++++++--------------
+ 3 files changed, 47 insertions(+), 34 deletions(-)
+
+diff --git a/src/file.h b/src/file.h
+index 66598bc..b3d015d 100644
+--- a/src/file.h
++++ b/src/file.h
+@@ -413,6 +413,7 @@ struct magic_set {
+ #define 		EVENT_HAD_ERR		0x01
+ 	const char *file;
+ 	size_t line;			/* current magic line number */
++	mode_t mode;			/* copy of current stat mode */
+ 
+ 	/* data for searches */
+ 	struct {
+diff --git a/src/funcs.c b/src/funcs.c
+index f59f4a1..0bf92fe 100644
+--- a/src/funcs.c
++++ b/src/funcs.c
+@@ -27,7 +27,7 @@
+ #include "file.h"
+ 
+ #ifndef	lint
+-FILE_RCSID("@(#)$File: funcs.c,v 1.94 2017/11/02 20:25:39 christos Exp $")
++FILE_RCSID("@(#)$File: funcs.c,v 1.95 2018/05/24 18:09:17 christos Exp $")
+ #endif	/* lint */
+ 
+ #include "magic.h"
+@@ -183,9 +183,11 @@ file_buffer(struct magic_set *ms, int fd, const char *inname __attribute__ ((__u
+ 	const char *type = "application/octet-stream";
+ 	const char *def = "data";
+ 	const char *ftype = NULL;
++	char *rbuf = NULL;
+ 	struct buffer b;
+ 
+ 	buffer_init(&b, fd, buf, nb);
++	ms->mode = b.st.st_mode;
+ 
+ 	if (nb == 0) {
+ 		def = "empty";
+@@ -248,31 +250,43 @@ file_buffer(struct magic_set *ms, int fd, const char *inname __attribute__ ((__u
+ 				goto done;
+ 		}
+ 	}
++#ifdef BUILTIN_ELF
++	if ((ms->flags & MAGIC_NO_CHECK_ELF) == 0 && nb > 5 && fd != -1) {
++		file_pushbuf_t *pb;
++		/*
++		 * We matched something in the file, so this
++		 * *might* be an ELF file, and the file is at
++		 * least 5 bytes long, so if it's an ELF file
++		 * it has at least one byte past the ELF magic
++		 * number - try extracting information from the
++		 * ELF headers that cannot easily be  extracted
++		 * with rules in the magic file. We we don't
++		 * print the information yet.
++		 */
++		if ((pb = file_push_buffer(ms)) == NULL)
++			return -1;
++
++		rv = file_tryelf(ms, &b);
++		rbuf = file_pop_buffer(ms, pb);
++		if (rv != 1) {
++			free(rbuf);
++			rbuf = NULL;
++		}
++		if ((ms->flags & MAGIC_DEBUG) != 0)
++			(void)fprintf(stderr, "[try elf %d]\n", m);
++	}
++#endif
+ 
+ 	/* try soft magic tests */
+ 	if ((ms->flags & MAGIC_NO_CHECK_SOFT) == 0) {
+ 		m = file_softmagic(ms, &b, NULL, NULL, BINTEST, looks_text);
+ 		if ((ms->flags & MAGIC_DEBUG) != 0)
+ 			(void)fprintf(stderr, "[try softmagic %d]\n", m);
++		if (m == 1 && rbuf) {
++			if (file_printf(ms, "%s", rbuf) == -1)
++				goto done;
++		}
+ 		if (m) {
+-#ifdef BUILTIN_ELF
+-			if ((ms->flags & MAGIC_NO_CHECK_ELF) == 0 && m == 1 &&
+-			    nb > 5 && fd != -1) {
+-				/*
+-				 * We matched something in the file, so this
+-				 * *might* be an ELF file, and the file is at
+-				 * least 5 bytes long, so if it's an ELF file
+-				 * it has at least one byte past the ELF magic
+-				 * number - try extracting information from the
+-				 * ELF headers that cannot easily * be
+-				 * extracted with rules in the magic file.
+-				 */
+-				m = file_tryelf(ms, &b);
+-				if ((ms->flags & MAGIC_DEBUG) != 0)
+-					(void)fprintf(stderr, "[try elf %d]\n",
+-					    m);
+-			}
+-#endif
+ 			if (checkdone(ms, &rv))
+ 				goto done;
+ 		}
+@@ -318,6 +332,7 @@ simple:
+ #if HAVE_FORK
+  done_encoding:
+ #endif
++	free(rbuf);
+ 	buffer_fini(&b);
+ 	if (rv)
+ 		return rv;
+diff --git a/src/softmagic.c b/src/softmagic.c
+index 57b4677..0197ec4 100644
+--- a/src/softmagic.c
++++ b/src/softmagic.c
+@@ -54,8 +54,7 @@ private int mget(struct magic_set *, struct magic *, const struct buffer *,
+ private int msetoffset(struct magic_set *, struct magic *, struct buffer *,
+     const struct buffer *, size_t, unsigned int);
+ private int magiccheck(struct magic_set *, struct magic *);
+-private int32_t mprint(struct magic_set *, struct magic *,
+-    const struct buffer *);
++private int32_t mprint(struct magic_set *, struct magic *);
+ private int moffset(struct magic_set *, struct magic *, const struct buffer *,
+     int32_t *);
+ private void mdebug(uint32_t, const char *, size_t);
+@@ -63,8 +62,7 @@ private int mcopy(struct magic_set *, union VALUETYPE *, int, int,
+     const unsigned char *, uint32_t, size_t, struct magic *);
+ private int mconvert(struct magic_set *, struct magic *, int);
+ private int print_sep(struct magic_set *, int);
+-private int handle_annotation(struct magic_set *, struct magic *,
+-    const struct buffer *, int);
++private int handle_annotation(struct magic_set *, struct magic *, int);
+ private int cvt_8(union VALUETYPE *, const struct magic *);
+ private int cvt_16(union VALUETYPE *, const struct magic *);
+ private int cvt_32(union VALUETYPE *, const struct magic *);
+@@ -241,7 +239,7 @@ flush:
+ 			goto flush;
+ 		}
+ 
+-		if ((e = handle_annotation(ms, m, b, firstline)) != 0) {
++		if ((e = handle_annotation(ms, m, firstline)) != 0) {
+ 			*need_separator = 1;
+ 			*printed_something = 1;
+ 			*returnval = 1;
+@@ -259,7 +257,7 @@ flush:
+ 				return -1;
+ 		}
+ 
+-		if (print && mprint(ms, m, b) == -1)
++		if (print && mprint(ms, m) == -1)
+ 			return -1;
+ 
+ 		switch (moffset(ms, m, &bb, &ms->c.li[cont_level].off)) {
+@@ -340,7 +338,7 @@ flush:
+ 				} else
+ 					ms->c.li[cont_level].got_match = 1;
+ 
+-				if ((e = handle_annotation(ms, m, b, firstline))
++				if ((e = handle_annotation(ms, m, firstline))
+ 				    != 0) {
+ 					*need_separator = 1;
+ 					*printed_something = 1;
+@@ -374,7 +372,7 @@ flush:
+ 						return -1;
+ 					*need_separator = 0;
+ 				}
+-				if (print && mprint(ms, m, b) == -1)
++				if (print && mprint(ms, m) == -1)
+ 					return -1;
+ 
+ 				switch (moffset(ms, m, &bb,
+@@ -454,7 +452,7 @@ strndup(const char *str, size_t n)
+ #endif /* HAVE_STRNDUP */
+ 
+ static int
+-varexpand(char *buf, size_t len, const struct buffer *b, const char *str)
++varexpand(struct magic_set *ms, char *buf, size_t len, const char *str)
+ {
+ 	const char *ptr, *sptr, *e, *t, *ee, *et;
+ 	size_t l;
+@@ -479,7 +477,7 @@ varexpand(char *buf, size_t len, const struct buffer *b, const char *str)
+ 			return -1;
+ 		switch (*ptr) {
+ 		case 'x':
+-			if (b->st.st_mode & 0111) {
++			if (ms->mode & 0111) {
+ 				ptr = t;
+ 				l = et - t;
+ 			} else {
+@@ -509,7 +507,7 @@ varexpand(char *buf, size_t len, const struct buffer *b, const char *str)
+ 
+ 
+ private int32_t
+-mprint(struct magic_set *ms, struct magic *m, const struct buffer *b)
++mprint(struct magic_set *ms, struct magic *m)
+ {
+ 	uint64_t v;
+ 	float vf;
+@@ -519,7 +517,7 @@ mprint(struct magic_set *ms, struct magic *m, const struct buffer *b)
+ 	const char *desc;
+ 	union VALUETYPE *p = &ms->ms_value;
+ 
+-	if (varexpand(ebuf, sizeof(ebuf), b, m->desc) == -1)
++	if (varexpand(ms, ebuf, sizeof(ebuf), m->desc) == -1)
+ 		desc = m->desc;
+ 	else
+ 		desc = ebuf;
+@@ -2166,8 +2164,7 @@ magiccheck(struct magic_set *ms, struct magic *m)
+ }
+ 
+ private int
+-handle_annotation(struct magic_set *ms, struct magic *m, const struct buffer *b,
+-    int firstline)
++handle_annotation(struct magic_set *ms, struct magic *m, int firstline)
+ {
+ 	if ((ms->flags & MAGIC_APPLE) && m->apple[0]) {
+ 		if (!firstline && file_printf(ms, "\n- ") == -1)
+@@ -2188,7 +2185,7 @@ handle_annotation(struct magic_set *ms, struct magic *m, const struct buffer *b,
+ 		const char *p;
+ 		if (!firstline && file_printf(ms, "\n- ") == -1)
+ 			return -1;
+-		if (varexpand(buf, sizeof(buf), b, m->mimetype) == -1)
++		if (varexpand(ms, buf, sizeof(buf), m->mimetype) == -1)
+ 			p = m->mimetype;
+ 		else
+ 			p = buf;
+-- 
+2.39.1
+

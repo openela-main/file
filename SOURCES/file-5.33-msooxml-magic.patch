@@ -1,0 +1,24 @@
+diff --git a/magic/Magdir/msooxml b/magic/Magdir/msooxml
+index bde098e..7d0bcc7 100644
+--- a/magic/Magdir/msooxml
++++ b/magic/Magdir/msooxml
+@@ -28,16 +28,16 @@
+ # skip to the second local file header
+ # since some documents include a 520-byte extra field following the file
+ # header, we need to scan for the next header
+->>(18.l+49)	search/2000	PK\003\004
++>>(18.l+49)	search/6000	PK\003\004
+ # now skip to the *third* local file header; again, we need to scan due to a
+ # 520-byte extra field following the file header
+->>>&26		search/1000	PK\003\004
++>>>&26		search/6000	PK\003\004
+ # and check the subdirectory name to determine which type of OOXML
+ # file we have.  Correct the mimetype with the registered ones:
+ # http://technet.microsoft.com/en-us/library/cc179224.aspx
+ >>>>&26		use		msooxml	
+ >>>>&26		default		x
+ # OpenOffice/Libreoffice orders ZIP entry differently, so check the 4th file
+->>>>>&26	search/1000	PK\003\004
++>>>>>&26	search/6000	PK\003\004
+ >>>>>>&26	use		msooxml	
+ >>>>>>&26	default		x		Microsoft OOXML
