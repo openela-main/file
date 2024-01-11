@@ -15,7 +15,7 @@
 Summary: A utility for determining file types
 Name: file
 Version: 5.33
-Release: 24%{?dist}
+Release: 25%{?dist}
 License: BSD
 Group: Applications/File
 Source0: ftp://ftp.astron.com/pub/file/file-%{version}.tar.gz
@@ -103,6 +103,9 @@ Patch28: file-5.33-static-PIE-binaries-3.patch
 Patch29: file-5.33-static-PIE-binaries-4.patch
 # upstream commit: 9c3137904e59d68debb97fceaced46a691ba241a (#2071581)
 Patch30: file-5.33-static-PIE-binaries-5.patch
+
+# https://github.com/file/file/commit/39e43a669d1260f0df36f0b2e78b3012ffd5f086 (#2158115)
+Patch31: file-5.33-thermocam-magic.patch
 
 URL: http://www.darwinsys.com/file/
 Requires: file-libs = %{version}-%{release}
@@ -275,6 +278,9 @@ cd %{py3dir}
 %endif
 
 %changelog
+* Thu Apr 20 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.33-25
+- Improve thermocam magic (rhbz#2158115)
+
 * Wed Feb 22 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.33-24
 - fix detection of static-pie binaries (#2071581)
 
