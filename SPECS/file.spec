@@ -15,7 +15,7 @@
 Summary: Utility for determining file types
 Name: file
 Version: 5.39
-Release: 12.1%{?dist}
+Release: 14%{?dist}
 License: BSD
 Source0: http://ftp.astron.com/pub/file/file-%{version}.tar.gz
 
@@ -32,29 +32,32 @@ Patch3: file-5.39-CLOEXEC.patch
 # Upstream commit 7d9b0f0d853957ad88dae0f440fecd58d2740ca7 (#1963892)
 Patch4: file-5.40-magic-python.patch
 
+# Upstream commit 239852073ad3a5ba5cf62b21e95565f122869f6a (#2213761)
+Patch5: file-5.41-pdf-deflate-not-password-protected.patch
+
 # not yet upstream
-Patch5: file-5.33-fix-compression.patch
+Patch6: file-5.33-fix-compression.patch
 
 # Upstream commit 4c8a4d8dbab1e73bfb30e391dcec49fcf269f84d (#2120692)
-Patch6: file-5.39-regex-caching-1.patch
+Patch7: file-5.39-regex-caching-1.patch
 # Upstream commit 7d438e28c16773e28a3707935c8e5d9927a515a7 (#2120692)
-Patch7: file-5.39-regex-caching-2.patch
+Patch8: file-5.39-regex-caching-2.patch
 # Upstream commit d1a00ae92b2cf09298615cf3aba474d8fec7380f (#2120692)
-Patch8: file-5.39-regex-caching-3.patch
+Patch9: file-5.39-regex-caching-3.patch
 # Upstream commit 4254a0afecfd2ae200c694dfcf93f4b4ac21652e (#2120692)
-Patch9: file-5.39-regex-caching-4.patch
+Patch10: file-5.39-regex-caching-4.patch
 # Upstream commit a4b3abc4104d8a4eeb84a6242f2f1a830204a539 (#2120692)
-Patch10: file-5.39-regex-combinations.patch
+Patch11: file-5.39-regex-combinations.patch
 # Upstream commit d17d8e9ff8ad8e95fdf66239ccdcc2133d1ce5ce (#2120692)
-Patch11: file-5.39-regex-escape.patch
+Patch12: file-5.39-regex-escape.patch
 # Upstream commit 14b5d7aa0b55275969809fdf84e8a8caee857c0f (#2120692)
-Patch12: file-5.39-regex-optimalizations.patch
+Patch13: file-5.39-regex-optimalizations.patch
 # Upstream commit 709dfecf25c2eb2822f7e0b8c30d6329cd2d97fb (#2164840)
-Patch13: file-5.39-floating-point-exception.patch
+Patch14: file-5.39-floating-point-exception.patch
 # Upstream commit 363d7fcf703ad3ebf37b45693b2c9e43eb8b4176 (#2164834)
-Patch14: file-5.39-static-PIE-binaries.patch
-# Upstream commit 85b7ab83257b3191a1a7ca044589a092bcef2bb3 (#2221659)
-Patch15: file-5.39-wasm-magic.patch
+Patch15: file-5.39-static-PIE-binaries.patch
+# Upstream commit 85b7ab83257b3191a1a7ca044589a092bcef2bb3 (#2219392)
+Patch16: file-5.39-wasm-magic.patch
 
 URL: https://www.darwinsys.com/file/
 Requires: file-libs%{?_isa} = %{version}-%{release}
@@ -234,9 +237,13 @@ cd %{py3dir}
 %endif
 
 %changelog
-* Mon Jul 03 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-12.1
+* Tue Jul 11 2023 Ville-Pekka Vainio <vpvainio@iki.fi> - 5.39-14
+- fix detection of deflate encoded PDFs
+  Resolves: #2213761
+
+* Mon Jul 03 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-13
 - fix recognition of wasm files
-  Resolves: #2221659
+  Resolves: #2219392
 
 * Wed Feb 01 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-12
 - fix detection of static-pie binaries
