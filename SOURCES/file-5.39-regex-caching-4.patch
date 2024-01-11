@@ -1,0 +1,164 @@
+diff --git a/src/apprentice.c b/src/apprentice.c
+index 781c5e1..50a91cf 100644
+--- a/src/apprentice.c
++++ b/src/apprentice.c
+@@ -2724,11 +2724,9 @@ getvalue(struct magic_set *ms, struct magic *m, const char **p, int action)
+ 			file_regex_t rx;
+ 			int rc = file_regcomp(ms, &rx, m->value.s,
+ 			    REG_EXTENDED);
+-			if (rc) {
+-				if (ms->flags & MAGIC_CHECK)
+-					file_regerror(&rx, rc, ms);
++			if (rc == 0) {
++				file_regfree(&rx);
+ 			}
+-			file_regfree(&rx);
+ 			return rc ? -1 : 0;
+ 		}
+ 		return 0;
+diff --git a/src/file.h b/src/file.h
+index f049446..ee15855 100644
+--- a/src/file.h
++++ b/src/file.h
+@@ -171,11 +171,7 @@
+ #define FILE_COMPILE	2
+ #define FILE_LIST	3
+ 
+-typedef struct {
+-	const char *pat;
+-	int rc;
+-	regex_t rx;
+-} file_regex_t;
++typedef regex_t file_regex_t;
+ 
+ struct buffer {
+ 	int fd;
+@@ -576,7 +572,6 @@ protected int file_regcomp(struct magic_set *, file_regex_t *, const char *,
+ protected int file_regexec(struct magic_set *, file_regex_t *, const char *,
+     size_t, regmatch_t *, int);
+ protected void file_regfree(file_regex_t *);
+-protected void file_regerror(file_regex_t *, int, struct magic_set *);
+ 
+ typedef struct {
+ 	char *buf;
+diff --git a/src/funcs.c b/src/funcs.c
+index 1391a44..df436eb 100644
+--- a/src/funcs.c
++++ b/src/funcs.c
+@@ -614,9 +614,7 @@ file_replace(struct magic_set *ms, const char *pat, const char *rep)
+ 	int rc, rv = -1;
+ 
+ 	rc = file_regcomp(ms, &rx, pat, REG_EXTENDED);
+-	if (rc) {
+-		file_regerror(&rx, rc, ms);
+-	} else {
++	if (rc == 0) {
+ 		regmatch_t rm;
+ 		int nm = 0;
+ 		while (file_regexec(ms, &rx, ms->o.buf, 1, &rm, 0) == 0) {
+@@ -644,16 +642,22 @@ file_regcomp(struct magic_set *ms, file_regex_t *rx, const char *pat, int flags)
+ 	strlcpy(old, setlocale(LC_CTYPE, NULL), sizeof(old));
+ 	(void)setlocale(LC_CTYPE, "C");
+ #endif
+-	rx->pat = pat;
+-
+-	rx->rc = regcomp(&rx->rx, pat, flags);
++	int rc;
++	rc = regcomp(rx, pat, flags);
+ 
+ #ifdef USE_C_LOCALE
+ 	uselocale(old);
+ #else
+ 	(void)setlocale(LC_CTYPE, old);
+ #endif
+-	return rx->rc;
++	if (rc > 0 && (ms->flags & MAGIC_CHECK)) {
++		char errmsg[512];
++
++		(void)regerror(rc, rx, errmsg, sizeof(errmsg));
++		file_magerror(ms, "regex error %d for `%s', (%s)", rc, pat,
++		    errmsg);
++	}
++	return rc;
+ }
+ 
+ protected int
+@@ -669,11 +673,10 @@ file_regexec(struct magic_set *ms, file_regex_t *rx, const char *str,
+ 	(void)setlocale(LC_CTYPE, "C");
+ #endif
+ 	int rc;
+-	assert(rx->rc == 0);
+ 	/* XXX: force initialization because glibc does not always do this */
+ 	if (nmatch != 0)
+ 		memset(pmatch, 0, nmatch * sizeof(*pmatch));
+-	rc = regexec(&rx->rx, str, nmatch, pmatch, eflags);
++	rc = regexec(rx, str, nmatch, pmatch, eflags);
+ #ifdef USE_C_LOCALE
+ 	uselocale(old);
+ #else
+@@ -685,18 +688,7 @@ file_regexec(struct magic_set *ms, file_regex_t *rx, const char *str,
+ protected void
+ file_regfree(file_regex_t *rx)
+ {
+-	if (rx->rc == 0)
+-		regfree(&rx->rx);
+-}
+-
+-protected void
+-file_regerror(file_regex_t *rx, int rc, struct magic_set *ms)
+-{
+-	char errmsg[512];
+-
+-	(void)regerror(rc, &rx->rx, errmsg, sizeof(errmsg));
+-	file_magerror(ms, "regex error %d for `%s', (%s)", rc, rx->pat,
+-	    errmsg);
++	regfree(rx);
+ }
+ 
+ protected file_pushbuf_t *
+diff --git a/src/softmagic.c b/src/softmagic.c
+index b4052a6..f469a12 100644
+--- a/src/softmagic.c
++++ b/src/softmagic.c
+@@ -474,14 +474,13 @@ check_fmt(struct magic_set *ms, const char *fmt)
+ {
+ 	file_regex_t rx;
+ 	int rc, rv = -1;
++        const char* pat = "%[-0-9\\.]*s";
+ 
+ 	if (strchr(fmt, '%') == NULL)
+ 		return 0;
+ 
+-	rc = file_regcomp(ms, &rx, "%[-0-9\\.]*s", REG_EXTENDED|REG_NOSUB);
+-	if (rc) {
+-		file_regerror(&rx, rc, ms);
+-	} else {
++	rc = file_regcomp(ms, &rx, pat, REG_EXTENDED|REG_NOSUB);
++	if (rc == 0) {
+ 		rc = file_regexec(ms, &rx, fmt, 0, 0, 0);
+ 		rv = !rc;
+ 	}
+@@ -2008,9 +2007,6 @@ alloc_regex(struct magic_set *ms, struct magic *m)
+ 	if (rc == 0)
+ 		return rx;
+ 
+-fprintf(stderr, "regcomp %s %d\n", m->value.s, rc);
+-	file_regerror(rx, rc, ms);
+-	file_regfree(rx);
+ 	free(rx);
+ 	return NULL;
+ }
+@@ -2243,12 +2239,9 @@ magiccheck(struct magic_set *ms, struct magic *m, file_regex_t **m_cache)
+ 			break;
+ 
+ 		default:
+-			file_regerror(rx, rc, ms);
+-			v = CAST(uint64_t, -1);
++			return -1;
+ 			break;
+ 		}
+-		if (v == CAST(uint64_t, -1))
+-			return -1;
+ 		break;
+ 	}
+ 	case FILE_INDIRECT:
