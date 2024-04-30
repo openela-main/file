@@ -15,7 +15,7 @@
 Summary: Utility for determining file types
 Name: file
 Version: 5.39
-Release: 14%{?dist}
+Release: 16%{?dist}
 License: BSD
 Source0: http://ftp.astron.com/pub/file/file-%{version}.tar.gz
 
@@ -58,6 +58,10 @@ Patch14: file-5.39-floating-point-exception.patch
 Patch15: file-5.39-static-PIE-binaries.patch
 # Upstream commit 85b7ab83257b3191a1a7ca044589a092bcef2bb3 (#2219392)
 Patch16: file-5.39-wasm-magic.patch
+# Upstream commit c8deb32eab1089d1841482fb2e91833f114b6712 (#5734)
+Patch17: file-5.41-python-magic-threads.patch
+# Upstream commit 497aabb29cd08d2a5aeb63e45798d65fcbe03502 (#5733)
+Patch18: file-5.42-cve-strlcpy.patch
 
 URL: https://www.darwinsys.com/file/
 Requires: file-libs%{?_isa} = %{version}-%{release}
@@ -237,6 +241,12 @@ cd %{py3dir}
 %endif
 
 %changelog
+* Thu Nov 23 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-16
+- Fix stack-based buffer over-read in file_copystr() (CVE-2022-48554)
+
+* Thu Oct 12 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-15
+- Fix segfault in python3-file-magic concurrent method calls
+
 * Tue Jul 11 2023 Ville-Pekka Vainio <vpvainio@iki.fi> - 5.39-14
 - fix detection of deflate encoded PDFs
   Resolves: #2213761
