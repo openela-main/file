@@ -15,7 +15,7 @@
 Summary: A utility for determining file types
 Name: file
 Version: 5.33
-Release: 25%{?dist}
+Release: 26%{?dist}
 License: BSD
 Group: Applications/File
 Source0: ftp://ftp.astron.com/pub/file/file-%{version}.tar.gz
@@ -106,6 +106,9 @@ Patch30: file-5.33-static-PIE-binaries-5.patch
 
 # https://github.com/file/file/commit/39e43a669d1260f0df36f0b2e78b3012ffd5f086 (#2158115)
 Patch31: file-5.33-thermocam-magic.patch
+
+# Upstream commit c8deb32eab1089d1841482fb2e91833f114b6712 (#13737)
+Patch32: file-5.41-python-magic-threads.patch
 
 URL: http://www.darwinsys.com/file/
 Requires: file-libs = %{version}-%{release}
@@ -278,6 +281,9 @@ cd %{py3dir}
 %endif
 
 %changelog
+* Thu Oct 12 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.33-26
+- Fix segfault in python3-file-magic concurrent method calls (#13737)
+
 * Thu Apr 20 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.33-25
 - Improve thermocam magic (rhbz#2158115)
 

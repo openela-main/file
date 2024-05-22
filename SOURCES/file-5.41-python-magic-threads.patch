@@ -1,0 +1,77 @@
+diff --git a/python/magic.py b/python/magic.py
+index 662569e..2be58cd 100644
+--- a/python/magic.py
++++ b/python/magic.py
+@@ -5,6 +5,7 @@ Python bindings for libmagic
+ '''
+ 
+ import ctypes
++import threading
+ 
+ from collections import namedtuple
+ 
+@@ -241,11 +242,25 @@ def open(flags):
+ 
+ 
+ # Objects used by `detect_from_` functions
+-mime_magic = Magic(_open(MAGIC_MIME))
+-mime_magic.load()
+-none_magic = Magic(_open(MAGIC_NONE))
+-none_magic.load()
+-
++class MagicDetect(object):
++    def __init__(self):
++        self.mime_magic = Magic(_open(MAGIC_MIME))
++        self.mime_magic.load()
++        self.none_magic = Magic(_open(MAGIC_NONE))
++        self.none_magic.load()
++
++    def __del__(self):
++        self.mime_magic.close()
++        self.none_magic.close()
++
++threadlocal = threading.local()
++
++def _detect_make():
++    v = getattr(threadlocal, "magic_instance", None)
++    if v is None:
++        v = MagicDetect()
++        setattr(threadlocal, "magic_instance", v)
++    return v
+ 
+ def _create_filemagic(mime_detected, type_detected):
+     mime_type, mime_encoding = mime_detected.split('; ')
+@@ -259,9 +274,9 @@ def detect_from_filename(filename):
+ 
+     Returns a `FileMagic` namedtuple.
+     '''
+-
+-    return _create_filemagic(mime_magic.file(filename),
+-                             none_magic.file(filename))
++    x = _detect_make()
++    return _create_filemagic(x.mime_magic.file(filename),
++                             x.none_magic.file(filename))
+ 
+ 
+ def detect_from_fobj(fobj):
+@@ -271,8 +286,9 @@ def detect_from_fobj(fobj):
+     '''
+ 
+     file_descriptor = fobj.fileno()
+-    return _create_filemagic(mime_magic.descriptor(file_descriptor),
+-                             none_magic.descriptor(file_descriptor))
++    x = _detect_make()
++    return _create_filemagic(x.mime_magic.descriptor(file_descriptor),
++                             x.none_magic.descriptor(file_descriptor))
+ 
+ 
+ def detect_from_content(byte_content):
+@@ -281,5 +297,6 @@ def detect_from_content(byte_content):
+     Returns a `FileMagic` namedtuple.
+     '''
+ 
+-    return _create_filemagic(mime_magic.buffer(byte_content),
+-                             none_magic.buffer(byte_content))
++    x = _detect_make()
++    return _create_filemagic(x.mime_magic.buffer(byte_content),
++                             x.none_magic.buffer(byte_content))
