@@ -15,7 +15,7 @@
 Summary: Utility for determining file types
 Name: file
 Version: 5.45
-Release: 7%{?dist}
+Release: 8%{?dist}
 
 # Main license is BSD-2-Clause-Darwin
 # Shipped exceptions:
@@ -48,6 +48,9 @@ Patch3: file-5.45-readelf-limit-revert.patch
 
 # upstream commit: https://github.com/file/file/commit/218fdf813fd5ccecbb8887a1b62509cd1c6dd3a1
 Patch4: file-5.45-time-t.patch
+
+# upstream: https://github.com/file/file/commit/aa86458e499d6279c2fd18e98425e6ae891d0f33
+Patch6: file-5.47-erofs-magic.patch
 
 URL: https://www.darwinsys.com/file/
 Requires: file-libs%{?_isa} = %{version}-%{release}
@@ -232,6 +235,10 @@ make -C tests check
 %endif
 
 %changelog
+* Wed Mar 26 2025 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-8
+- magic: Use the bcachefs-uuid for erofs
+  Resolves: RHEL-76142
+
 * Tue Oct 29 2024 Troy Dawson <tdawson@redhat.com> - 5.45-7
 - Bump release for October 2024 mass rebuild:
   Resolves: RHEL-64018
@@ -239,7 +246,7 @@ make -C tests check
 * Mon Jun 24 2024 Troy Dawson <tdawson@redhat.com> - 5.45-6
 - Bump release for June 2024 mass rebuild
 
-* Thu Feb 14 2024 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-5
+* Wed Feb 14 2024 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-5
  - fix license of the file-libs subpackage 
 
 * Tue Feb 06 2024 Lukáš Zaoral <lzaoral@redhat.com> - 5.45-4

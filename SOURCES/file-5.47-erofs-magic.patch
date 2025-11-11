@@ -1,0 +1,23 @@
+From aa86458e499d6279c2fd18e98425e6ae891d0f33 Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Mon, 10 Mar 2025 20:51:11 +0000
+Subject: [PATCH] PR/624: vmihalko: Use the bcachefs-uuid for erofs
+
+---
+ magic/Magdir/filesystems | 5 +++--
+ 1 file changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/magic/Magdir/filesystems b/magic/Magdir/filesystems
+index 533518aeb..28178d1b6 100644
+--- a/magic/Magdir/filesystems
++++ b/magic/Magdir/filesystems
+@@ -2654,7 +2654,8 @@
+ #>1060		lelong		x		\b, blocks=%d
+ #>1064		lelong		x		\b, metadata@%#x
+ #>1068		lelong		x		\b, xattr@%#x
+->1072		guid		x		\b, uuid=%s
++>1072		guid		x		\b, uuid=
++>1072		use		bcachefs-uuid
+ >1088		string		>0		\b, name=%s
+ >1104		lelong		>0		\b, incompat:
+ >>1104		lelong		&1		LZ4_0PADDING
