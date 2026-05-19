@@ -15,7 +15,7 @@
 Summary: Utility for determining file types
 Name: file
 Version: 5.45
-Release: 8%{?dist}
+Release: 9%{?dist}
 
 # Main license is BSD-2-Clause-Darwin
 # Shipped exceptions:
@@ -51,6 +51,9 @@ Patch4: file-5.45-time-t.patch
 
 # upstream: https://github.com/file/file/commit/aa86458e499d6279c2fd18e98425e6ae891d0f33
 Patch6: file-5.47-erofs-magic.patch
+
+# Upstream commit 141dde1fe573e6c42800d12affb94c927b44da3e
+Patch7: file-5.47-python.patch
 
 URL: https://www.darwinsys.com/file/
 Requires: file-libs%{?_isa} = %{version}-%{release}
@@ -235,6 +238,10 @@ make -C tests check
 %endif
 
 %changelog
+* Mon Feb 23 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-9
+- Fix TypeError: 'NoneType' object is not callable in magic.close()
+  Resolves: RHEL-151423
+
 * Wed Mar 26 2025 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-8
 - magic: Use the bcachefs-uuid for erofs
   Resolves: RHEL-76142
