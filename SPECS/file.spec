@@ -15,7 +15,7 @@
 Summary: Utility for determining file types
 Name: file
 Version: 5.39
-Release: 16%{?dist}
+Release: 17%{?dist}
 License: BSD
 Source0: http://ftp.astron.com/pub/file/file-%{version}.tar.gz
 
@@ -62,6 +62,8 @@ Patch16: file-5.39-wasm-magic.patch
 Patch17: file-5.41-python-magic-threads.patch
 # Upstream commit 497aabb29cd08d2a5aeb63e45798d65fcbe03502 (#5733)
 Patch18: file-5.42-cve-strlcpy.patch
+# Upstream commit 141dde1fe573e6c42800d12affb94c927b44da3e
+Patch19: file-5.43-python.patch
 
 URL: https://www.darwinsys.com/file/
 Requires: file-libs%{?_isa} = %{version}-%{release}
@@ -241,6 +243,10 @@ cd %{py3dir}
 %endif
 
 %changelog
+* Mon Feb 23 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-17
+- Fix TypeError: 'NoneType' object is not callable in magic.close()
+  Resolves: RHEL-136523
+
 * Thu Nov 23 2023 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-16
 - Fix stack-based buffer over-read in file_copystr() (CVE-2022-48554)
 

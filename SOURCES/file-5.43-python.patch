@@ -1,0 +1,20 @@
+diff --git a/python/magic.py b/python/magic.py
+index a528cbc..eb153b0 100644
+--- a/python/magic.py
++++ b/python/magic.py
+@@ -111,12 +111,14 @@ _errno.argtypes = [magic_t]
+ class Magic(object):
+     def __init__(self, ms):
+         self._magic_t = ms
++        self._close = _close
+ 
+     def close(self):
+         """
+         Closes the magic database and deallocates any resources used.
+         """
+-        _close(self._magic_t)
++        if self._close:
++            self._close(self._magic_t)
+ 
+     @staticmethod
+     def __tostr(s):
