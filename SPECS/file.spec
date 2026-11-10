@@ -15,7 +15,7 @@
 Summary: Utility for determining file types
 Name: file
 Version: 5.39
-Release: 17%{?dist}
+Release: 19%{?dist}
 License: BSD
 Source0: http://ftp.astron.com/pub/file/file-%{version}.tar.gz
 
@@ -64,6 +64,12 @@ Patch17: file-5.41-python-magic-threads.patch
 Patch18: file-5.42-cve-strlcpy.patch
 # Upstream commit 141dde1fe573e6c42800d12affb94c927b44da3e
 Patch19: file-5.43-python.patch
+# Upstream commit fa66260f9a52dba5c3a64e7d69485d24af4cd369
+# https://github.com/file/file/commit/fa66260f9a52dba5c3a64e7d69485d24af4cd369
+Patch20: file-5.48-magic-getpath-race.patch
+# Upstream commit 0d435dc73d94743a0e83bf6fb6843564d09d2a7d
+# https://github.com/file/file/commit/0d435dc73d94743a0e83bf6fb6843564d09d2a7d
+Patch21: file-5.48-qemu-compression-formats.patch
 
 URL: https://www.darwinsys.com/file/
 Requires: file-libs%{?_isa} = %{version}-%{release}
@@ -243,6 +249,14 @@ cd %{py3dir}
 %endif
 
 %changelog
+* Wed Apr 29 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-19
+- Add QEMU suspend image compression format reporting
+  Resolves: RHEL-68294
+
+* Mon Apr 27 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-18
+- Fix race condition in magic_getpath() for thread safety
+  Resolves: RHEL-93189
+
 * Mon Feb 23 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.39-17
 - Fix TypeError: 'NoneType' object is not callable in magic.close()
   Resolves: RHEL-136523
