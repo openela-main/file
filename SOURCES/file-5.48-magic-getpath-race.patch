@@ -1,0 +1,63 @@
+From: Christos Zoulas <christos@zoulas.com>
+Date: Wed, 15 Apr 2026 16:53:39 +0000
+Subject: PR/753: vmihalko: Fix race is magic_getpath()
+
+# Upstream-commit: fa66260f9a52dba5c3a64e7d69485d24af4cd369
+# https://github.com/file/file/commit/fa66260f9a52dba5c3a64e7d69485d24af4cd369
+diff --git a/src/magic.c b/src/magic.c
+index 5084dcc..c1d9d86 100644
+--- a/src/magic.c
++++ b/src/magic.c
+@@ -72,7 +72,7 @@ FILE_RCSID("@(#)$File: magic.c,v 1.121 2023/02/09 17:45:19 christos Exp $")
+ file_private void close_and_restore(const struct magic_set *, const char *, int,
+     const struct stat *);
+ file_private int unreadable_info(struct magic_set *, mode_t, const char *);
+-file_private const char* get_default_magic(void);
++file_private const char *get_default_magic(void);
+ #ifndef COMPILE_ONLY
+ file_private const char *file_or_fd(struct magic_set *, const char *, int);
+ #endif
+@@ -176,15 +176,11 @@ get_default_magic(void)
+ {
+ 	static const char hmagic[] = "/.magic/magic.mgc";
+ 	static char *default_magic;
+-	char *home, *hmagicpath;
++	char *home, *hmagicpath, *tmp_magic;
+ 
+ #ifndef WIN32
+ 	struct stat st;
+ 
+-	if (default_magic) {
+-		free(default_magic);
+-		default_magic = NULL;
+-	}
+ 	if ((home = getenv("HOME")) == NULL)
+ 		return MAGIC;
+ 
+@@ -205,9 +201,12 @@ get_default_magic(void)
+ 		}
+ 	}
+ 
+-	if (asprintf(&default_magic, "%s:%s", hmagicpath, MAGIC) < 0)
++	if (asprintf(&tmp_magic, "%s:%s", hmagicpath, MAGIC) < 0)
+ 		goto out;
+ 	free(hmagicpath);
++	hmagicpath = default_magic;
++	default_magic = tmp_magic;
++	free(hmagicpath);
+ 	return default_magic;
+ out:
+ 	default_magic = NULL;
+@@ -245,7 +244,9 @@ out:
+         _w32_get_magic_relative_to(&hmagicpath, _w32_dll_instance);
+ 
+ 	/* Avoid MAGIC constant - it likely points to a file within MSys tree */
++	tmp_magic = default_magic;
+ 	default_magic = hmagicpath;
++	free(tmp_magic);
+ 	return default_magic;
+ #endif
+ }
+-- 
+2.53.0
+

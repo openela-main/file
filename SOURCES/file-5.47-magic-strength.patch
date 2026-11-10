@@ -1,0 +1,282 @@
+From 41e0b8bc41140dbc7b2d7bc6409c090be2ad67b7 Mon Sep 17 00:00:00 2001
+From: Christos Zoulas <christos@zoulas.com>
+Date: Fri, 30 May 2025 13:36:08 +0000
+Subject: [PATCH] Rebalance magic detection strengths: JS/HTML/C/C++/PHP/Python
+
+Combines two upstream commits adapted for file-5.45:
+
+1. ad925d3e - Reduce JavaScript strength from +30 to +20, bump HTML
+   from +15 to +30, so HTML beats JavaScript (PR/569).
+
+2. 41e0b8bc - Bump C, C++, PHP, Python strengths by +15 so C/Python
+   beat HTML and PHP beats C (PR/642).
+
+The net effect is: C files containing "for (function ..." are no longer
+misidentified as JavaScript, which caused fapolicyd to block systemtap
+probe compilation (RHEL-153227).
+
+Upstream-1: https://github.com/file/file/commit/ad925d3e47373f429a87c1ba9d9269f5c1ad757e
+Upstream-2: https://github.com/file/file/commit/41e0b8bc41140dbc7b2d7bc6409c090be2ad67b7
+--- a/magic/Magdir/javascript
++++ b/magic/Magdir/javascript
+@@ -19,49 +19,49 @@
+ # JavaScript
+ # The strength is increased to beat the C++ & HTML rules
+ 0	search	"use\x20strict"	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	search	'use\x20strict'	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	regex	module(\\.|\\[["'])exports.*=	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	regex	\^(const|var|let).*=.*require\\(	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	regex	\^export\x20(function|class|default|const|var|let|async)\x20	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	regex	\\((async\x20)?function[(\x20]	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	regex	\^(import|export).*\x20from\x20	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	regex	\^(import|export)\x20["']\\./	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	regex	\^require\\(["']	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 0	regex	typeof.*[!=]==	JavaScript source
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext 	js
+ 
+ # React Native minified JavaScript
+ 0	search/128	__BUNDLE_START_TIME__=	React Native minified JavaScript
+-!:strength +30
++!:strength +20
+ !:mime	application/javascript
+ !:ext	bundle/jsbundle
+ 
+--- a/magic/Magdir/sgml
++++ b/magic/Magdir/sgml
+@@ -53,11 +53,14 @@
+ # avoid misdetection as JavaScript
+ 0	string/cWt	\<!doctype\ html	HTML document text
+ !:mime	text/html
++!:strength + 30
+ 0	string/ct	\<html>	HTML document text
+ !:mime	text/html
++!:strength + 30
+ 0	string/ct	\<!--
+ >&0	search/4096/cWt	\<!doctype\ html	HTML document text
+ !:mime	text/html
++!:strength + 30
+ >&0	search/4096/ct	\<html>	HTML document text
+ !:mime	text/html
+ 
+@@ -65,66 +68,66 @@
+ # https://www.w3.org/TR/SVG/single-page.html
+ 0	search/4096/cWbt	\<!doctype\ svg	SVG XML document
+ !:mime  image/svg+xml
+-!:strength + 15
++!:strength + 30
+ 
+ 0	search/4096/cwt	\<head\>		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cWt	\<head\ 		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cwt	\<title\>		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cWt	\<title\ 		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cwt	\<html\>		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cWt	\<html\ 		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cwt	\<script\> 		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cWt	\<script\ 		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cwt	\<style\> 		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cWt	\<style\  		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cwt	\<table\>		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 0	search/4096/cWt	\<table\ 		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 
+ 0	search/4096/cwt	\<a\ href=		HTML document text
+ !:mime	text/html
+-!:strength + 15
++!:strength + 30
+ 
+ # Extensible markup language (XML), a subset of SGML
+ # from Marc Prud'hommeaux (marc@apocalypse.org)
+ 0	search/1/cwt	\<?xml			XML document text
+ !:mime	text/xml
+-!:strength + 15
++!:strength + 30
+ 0	string/t		\<?xml\ version\ "	XML
+ !:mime	text/xml
+-!:strength + 15
++!:strength + 30
+ 0	string/t		\<?xml\ version="	XML
+ !:mime	text/xml
+-!:strength + 15
++!:strength + 30
+ >15	string/t	>\0			%.3s document text
+ >>23	search/1	\<xsl:stylesheet	(XSL stylesheet)
+ >>24	search/1	\<xsl:stylesheet	(XSL stylesheet)
+ 0	string/t	\<?xml\ version='	XML
+ !:mime	text/xml
+-!:strength + 15
++!:strength + 30
+ >15	string/t	>\0			%.3s document text
+ >>23	search/1	\<xsl:stylesheet	(XSL stylesheet)
+ >>24	search/1	\<xsl:stylesheet	(XSL stylesheet)
+--- a/magic/Magdir/c-lang
++++ b/magic/Magdir/c-lang
+@@ -17,7 +17,7 @@
+ >>0	regex	\^class[[:space:]]+
+ >>>&0	regex 	\\{[\.\*]\\}(;)?$			\b++
+ >>&0	clear	x				source text
+-!:strength + 15
++!:strength + 30
+ !:mime	text/x-c
+ 0	search/8192	pragma
+ >0	regex	\^#[[:space:]]*pragma	C source text
+@@ -59,20 +59,20 @@
+ # The strength of these rules is increased so they beat the C rules above
+ 0	search/8192	namespace
+ >0	regex	\^namespace[[:space:]]+[_[:alpha:]]{1,30}[[:space:]]*\\{	C++ source text
+-!:strength + 30
++!:strength + 45
+ !:mime	text/x-c++
+ # using namespace [namespace] or using std::[lib]
+ 0	search/8192	using
+ >0	regex	\^using[[:space:]]+(namespace\ )?std(::)?[[:alpha:]]*[[:space:]]*;		C++ source text
+-!:strength + 30
++!:strength + 45
+ !:mime	text/x-c++
+ 0	search/8192	template
+ >0	regex	\^[[:space:]]*template[[:space:]]*<.*>[[:space:]]*$	C++ source text
+-!:strength + 30
++!:strength + 45
+ !:mime	text/x-c++
+ 0	search/8192	virtual
+ >0	regex	\^[[:space:]]*virtual[[:space:]]+.*[};][[:space:]]*$		C++ source text
+-!:strength + 30
++!:strength + 45
+ !:mime	text/x-c++
+ # But class alone is reduced to avoid beating php (Jens Schleusener)
+ 0	search/8192	class
+@@ -81,15 +81,15 @@
+ !:mime	text/x-c++
+ 0	search/8192	public
+ >0	regex	\^[[:space:]]*public:		C++ source text
+-!:strength + 30
++!:strength + 45
+ !:mime	text/x-c++
+ 0	search/8192	private
+ >0	regex	\^[[:space:]]*private:		C++ source text
+-!:strength + 30
++!:strength + 45
+ !:mime	text/x-c++
+ 0	search/8192	protected
+ >0	regex	\^[[:space:]]*protected:	C++ source text
+-!:strength + 30
++!:strength + 45
+ !:mime	text/x-c++
+ 
+ # Objective-C
+--- a/magic/Magdir/commands
++++ b/magic/Magdir/commands
+@@ -130,17 +130,17 @@
+ # PHP scripts
+ # Ulf Harnhammar <ulfh@update.uu.se>
+ 0	search/1/c	=<?php			PHP script text
+-!:strength + 30
++!:strength + 45
+ !:mime	text/x-php
+ 0	search/1	=<?\n			PHP script text
+ !:mime	text/x-php
+ 0	search/1	=<?\r			PHP script text
+ !:mime	text/x-php
+ 0	search/1/w	#!\ /usr/local/bin/php	PHP script text executable
+-!:strength + 10
++!:strength + 25
+ !:mime	text/x-php
+ 0	search/1/w	#!\ /usr/bin/php	PHP script text executable
+-!:strength + 10
++!:strength + 25
+ !:mime	text/x-php
+ # Smarty compiled template, https://www.smarty.net/
+ # Elan Ruusamae <glen@delfi.ee>
+--- a/magic/Magdir/python
++++ b/magic/Magdir/python
+@@ -230,13 +230,13 @@
+ >>>0		use		pyc-pep552
+ 
+ 0	search/1/w	#!\040/usr/bin/python	Python script text executable
+-!:strength + 15
++!:strength + 30
+ !:mime text/x-script.python
+ 0	search/1/w	#!\040/usr/local/bin/python	Python script text executable
+-!:strength + 15
++!:strength + 30
+ !:mime text/x-script.python
+ 0	search/10/w	#!\040/usr/bin/env\040python	Python script text executable
+-!:strength + 15
++!:strength + 30
+ !:mime text/x-script.python
+ 
+ 
+---

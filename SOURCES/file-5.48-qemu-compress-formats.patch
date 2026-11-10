@@ -1,0 +1,24 @@
+From: Christos Zoulas <christos@zoulas.com>
+Date: Wed, 15 Apr 2026 16:56:41 +0000
+Subject: PR/752: vmihalko: Add qemu compression formats
+
+# Upstream-commit: 0d435dc73d94743a0e83bf6fb6843564d09d2a7d
+# https://github.com/file/file/commit/0d435dc73d94743a0e83bf6fb6843564d09d2a7d
+
+diff --git a/magic/Magdir/virtual b/magic/Magdir/virtual
+index 3372020..f82da3f 100644
+--- a/magic/Magdir/virtual
++++ b/magic/Magdir/virtual
+@@ -198,7 +198,11 @@
+ >0x10	lelong	x	\b, version %u
+ >0x14	lelong	x	\b, XML length %u
+ >0x18	lelong	1	\b, running
+->0x1c	lelong	1	\b, compressed
++>0x1c	lelong	0	\b, RAW (no compression)
++>0x1c	lelong	1	\b, gzip compressed
++>0x1c	lelong	2	\b, bzip2 compressed
++>0x1c	lelong	3	\b, xz compressed
++>0x1c	lelong	4	\b, lzop compressed
+ 
+ 0	string	LibvirtQemudPart	Libvirt QEMU partial Suspend Image
+ # From: Alex Beregszaszi <alex@fsn.hu>

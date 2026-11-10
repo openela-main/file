@@ -15,7 +15,7 @@
 Summary: Utility for determining file types
 Name: file
 Version: 5.45
-Release: 9%{?dist}
+Release: 12%{?dist}
 
 # Main license is BSD-2-Clause-Darwin
 # Shipped exceptions:
@@ -54,6 +54,16 @@ Patch6: file-5.47-erofs-magic.patch
 
 # Upstream commit 141dde1fe573e6c42800d12affb94c927b44da3e
 Patch7: file-5.47-python.patch
+
+# Upstream: https://github.com/file/file/commit/fa66260f9a52dba5c3a64e7d69485d24af4cd369
+Patch8: file-5.48-magic-getpath-race.patch
+
+# Upstream: https://github.com/file/file/commit/0d435dc73d94743a0e83bf6fb6843564d09d2a7d
+Patch9: file-5.48-qemu-compress-formats.patch
+
+# Upstream: https://github.com/file/file/commit/ad925d3e (JS/HTML strength)
+# Upstream: https://github.com/file/file/commit/41e0b8bc (C/C++/PHP/Python strength)
+Patch10: file-5.47-magic-strength.patch
 
 URL: https://www.darwinsys.com/file/
 Requires: file-libs%{?_isa} = %{version}-%{release}
@@ -238,6 +248,18 @@ make -C tests check
 %endif
 
 %changelog
+* Mon May 11 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-12
+- Bump magic strength for C, C++, PHP, and Python to fix misdetection
+  Resolves: RHEL-153227
+
+* Wed Apr 29 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-11
+- Add QEMU suspend image compression format reporting
+  Resolves: RHEL-170657
+
+* Mon Apr 27 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-10
+- Fix race condition in magic_getpath()
+  Resolves: RHEL-170663
+
 * Mon Feb 23 2026 Vincent Mihalkovic <vmihalko@redhat.com> - 5.45-9
 - Fix TypeError: 'NoneType' object is not callable in magic.close()
   Resolves: RHEL-151423
